@@ -1,0 +1,49 @@
+{
+  "message": "ok",
+  "status_code": 200,
+  "data": {
+    "quantity": 1,
+    "user_contract_exists": true,
+    "charging_stations": [
+      {
+        "chargeBoxes": [
+          {
+            "chargeBoxName": "Charging Station 1",
+            "chargeBoxId": "1234",
+            "online": true,
+            "gpsLat": 47.123,
+            "gpsLng": 8.456,
+            "street": "Bahnhofstrasse 1",
+            "city": "Zurich",
+            "zip": "8000",
+            "country": "CH",
+            "plugType": "TYPE_2_OUTLET",
+            "connector_count": 1,
+            "connectors": [
+              {
+                "connectorName": "Typ 2 Kabel",
+                "connectorId": 1,
+                "status": "Available",
+                "plugType": "TYPE_2_OUTLET",
+                "tariff_data": {
+                  "prices": {
+                    "high": 23.66,
+                    "low": 19.35,
+                    "current": "low"
+                  }
+                },
+                "connectorStatus": "active",
+                "chargingProcessStatus": "inactive",
+                "hasPermission": true
+              }
+            ],
+            "tariff_schedule": "Hochtarif (HT): <br>Montag bis Freitag 07:00 \u2013 20:00 Uhr<br><br><br>Niedertarif (NT): <br>\u00dcbrige Zeiten<br><br>",
+            "connectorStatus": "active",
+            "chargingProcessStatus": "inactive"
+          }
+        ],
+        "invoiced": false
+      }
+    ]
+  }
+}

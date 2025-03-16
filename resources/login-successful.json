@@ -1,0 +1,6 @@
+{
+  "status_code": 200,
+  "message": "log_in_successful",
+  "token": "1234",
+  "is_verified": true
+}
