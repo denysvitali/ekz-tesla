@@ -16,6 +16,7 @@ const (
 type Client struct {
 	httpClient *http.Client
 	config     *Config
+	configPath string
 	token      string
 }
 
@@ -49,6 +50,10 @@ func New(config *Config) (*Client, error) {
 		client: c,
 	}
 	return c, nil
+}
+
+func (c *Client) SetConfigPath(path string) {
+	c.configPath = path
 }
 
 func (c *Client) Init() error {
@@ -157,6 +162,9 @@ func (c *Client) remoteOp(boxId string, connectorID int, op string) (*RemoteStar
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("remote "+op+" failed: %s", err)
+	}
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("remote "+op+" failed: %s", res.Status)
 	}
@@ -186,7 +194,10 @@ func (c *Client) checkToken() error {
 // saveToken saves the token to the config file
 func (c *Client) saveToken() error {
 	c.config.Token = c.token
-	return SaveConfig(c.config, defaultConfigFilePath)
+	if c.configPath == "" {
+		return nil
+	}
+	return SaveConfig(c.config, c.configPath)
 }
 
 func (c *Client) GetConfig() Config {
