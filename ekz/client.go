@@ -14,10 +14,9 @@ const (
 )
 
 type Client struct {
-	httpClient     *http.Client
-	config         *Config
-	token          string
-	configFilePath string
+	httpClient *http.Client
+	config     *Config
+	token      string
 }
 
 type loginRequest struct {
@@ -36,45 +35,41 @@ type loginResponse struct {
 
 var log = logrus.StandardLogger()
 
-func New(configFile string) *Client {
-	log.Debugf("ekz New(%s)", configFile)
+func New(config *Config) (*Client, error) {
+	if config == nil {
+		return nil, fmt.Errorf("config cannot be nil")
+	}
+	log.Debugf("ekz New")
 	c := &Client{
-		httpClient:     http.DefaultClient,
-		configFilePath: configFile,
+		httpClient: http.DefaultClient,
+		config:     config,
 	}
 	c.httpClient.Transport = ekzRoundTripper{
 		inner:  http.DefaultTransport,
 		client: c,
 	}
-	return c
+	return c, nil
 }
 
 func (c *Client) Init() error {
 	log.Debugf("initializing client")
-	// Read the config
-	cfg, err := GetConfigFromFile(c.configFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	c.config = cfg
 
 	// Check if token is valid
 	log.Debugf("Checking if the token is valid")
-	if cfg.Token != "" {
+	if c.config.Token != "" {
 		log.Debugf("token is not empty, trying to use it")
-		c.token = cfg.Token
+		c.token = c.config.Token
 		if err := c.checkToken(); err != nil {
 			log.Warnf("token is invalid: %s", err)
 			c.token = ""
-			err = c.Login(cfg.Username, cfg.Password)
+			err = c.Login(c.config.Username, c.config.Password)
 			if err != nil {
 				return err
 			}
 		}
 	} else {
 		log.Debugf("token is empty, trying to login")
-		err = c.Login(cfg.Username, cfg.Password)
+		err := c.Login(c.config.Username, c.config.Password)
 		if err != nil {
 			return err
 		}
@@ -190,24 +185,10 @@ func (c *Client) checkToken() error {
 
 // saveToken saves the token to the config file
 func (c *Client) saveToken() error {
-	cfg, err := GetConfigFromFile(c.configFilePath)
-	if err != nil {
-		return err
-	}
-	cfg.Token = c.token
-	return SaveConfig(cfg, c.configFilePath)
+	c.config.Token = c.token
+	return SaveConfig(c.config, defaultConfigFilePath)
 }
 
 func (c *Client) GetConfig() Config {
-	if c.config != nil {
-		return *c.config
-	}
-
-	cfg, err := GetConfigFromFile(c.configFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	c.config = cfg
-	return *cfg
+	return *c.config
 }

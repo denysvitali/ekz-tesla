@@ -12,7 +12,7 @@ import (
 func TestClient_Login(t *testing.T) {
 	gock.New(Backend).Post("/users/log-in").Reply(200).File("../resources/login-successful.json")
 
-	c := New("")
+	c := New(&Config{})
 	err := c.Login("user", "pass")
 	assert.Nil(t, err)
 }
@@ -26,7 +26,7 @@ func TestClient_GetUserChargingStations(t *testing.T) {
 		Reply(200).
 		File("../resources/user-charging-stations.json")
 
-	c := New("")
+	c := New(&Config{})
 	c.token = token
 	chargingStations, err := c.GetUserChargingStations()
 	assert.Nil(t, err)
@@ -44,7 +44,7 @@ func TestClient_RemoteStart_Mock(t *testing.T) {
 		Reply(200).
 		File("../resources/remote-start.json")
 
-	c := New("")
+	c := New(&Config{})
 	c.token = token
 	remoteStart, err := c.RemoteStart("00000000", 1)
 	log.Debugf("remote start: %+v", remoteStart)
@@ -61,7 +61,7 @@ func TestClient_RemoteStop_Mock(t *testing.T) {
 		Reply(200).
 		File("../resources/remote-start.json")
 
-	c := New("")
+	c := New(&Config{})
 	c.token = token
 	remoteStop, err := c.RemoteStop("00000000", 1)
 	assert.Nil(t, err)
@@ -72,15 +72,15 @@ func TestClient_RemoteStop_Mock(t *testing.T) {
 // TestClient_StartCharge calls the real API and starts charging the vehicle
 func TestClient_StartCharge(t *testing.T) {
 	chargeBoxId := os.Getenv("CHARGE_BOX_ID")
-	if chargeBoxId == "" {
+	if (chargeBoxId == "") {
 		t.Skip("CHARGE_BOX_ID is not set")
 	}
 	log.SetLevel(logrus.DebugLevel)
-	c := New("")
 	cfg, err := GetConfigFromFile("")
 	if err != nil {
 		t.Fatalf("failed to get config: %v", err)
 	}
+	c := New(cfg)
 	err = c.Login(cfg.Username, cfg.Password)
 	if err != nil {
 		t.Fatalf("failed to login: %v", err)
