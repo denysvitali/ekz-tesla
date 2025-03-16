@@ -72,6 +72,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create ekz client: %v", err)
 	}
+	c.SetConfigPath(args.ConfigFile)
 	err = c.Init()
 	if err != nil {
 		log.Fatalf("failed to init: %v", err)
