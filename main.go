@@ -68,7 +68,11 @@ func main() {
 		return
 	}
 
-	c := ekz.New(args.ConfigFile)
+	c, err := ekz.New(cfg)
+	if err != nil {
+		log.Fatalf("failed to create ekz client: %v", err)
+	}
+	c.SetConfigPath(args.ConfigFile)
 	err = c.Init()
 	if err != nil {
 		log.Fatalf("failed to init: %v", err)
@@ -212,7 +216,10 @@ func doAutostart(configFile string, teslamateApiUrl string, carId int, maximumCh
 		return
 	}
 
-	c := ekz.New(configFile)
+	c, err := ekz.New(cfg)
+	if err != nil {
+		log.Fatalf("failed to create ekz client: %v", err)
+	}
 	err = c.Init()
 	if err != nil {
 		log.Fatalf("autostart: failed to init ekz client: %v", err)
