@@ -1,0 +1,14 @@
+{
+  "personal": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john.doe@example.com",
+    "language": "en",
+    "street": "Bahnofstrasse 1",
+    "zip": "8001",
+    "city": "Zurich",
+    "country": "Switzerland",
+    "is_social_login": false,
+    "telefone": "+41 44 123 45 67"
+  }
+}
