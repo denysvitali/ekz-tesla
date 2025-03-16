@@ -1,0 +1,13 @@
+{
+  "message": "ok",
+  "status_code": 200,
+  "data": {
+    "start_time": "2023-11-27T21:15:12.634Z",
+    "charging_status": "ONGOING",
+    "current_tariff": {
+      "tariff_status": "low",
+      "tariff_price": null
+    },
+    "current_power": null
+  }
+}
