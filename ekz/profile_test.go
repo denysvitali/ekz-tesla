@@ -2,6 +2,7 @@ package ekz_test
 
 import (
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/h2non/gock"
@@ -37,10 +38,25 @@ func TestClient_GetProfile(t *testing.T) {
 	}
 	c, err := ekz.New(&cfg)
 	require.NoError(t, err)
+	tmpFile, err := os.CreateTemp(os.TempDir(), "ekz-tesla-*.yaml")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+	c.SetConfigPath(tmpFile.Name())
 	err = c.Login(cfg.Username, cfg.Password)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Make sure the token was saved
+	require.NoError(t, tmpFile.Close())
+	cfgFromFile, err := ekz.GetConfigFromFile(tmpFile.Name())
+	require.NoError(t, err)
+	require.Equal(t, &ekz.Config{
+		Username:        "user@example.com",
+		Password:        "password",
+		Token:           "1234",
+		ChargingStation: ekz.ChargingStationConfig{},
+	}, cfgFromFile)
 
 	profile, err := c.GetProfile()
 	if err != nil {
