@@ -104,7 +104,6 @@ func main() {
 }
 
 func doScheduledAutostart() {
-
 	epochPlus1Year := time.Unix(0, 0).Add(365 * 24 * time.Hour)
 	for {
 		if time.Now().After(epochPlus1Year) {
