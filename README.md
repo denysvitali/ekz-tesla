@@ -35,19 +35,14 @@ go build -o ekz-tesla .
 
 Create a config file (JSON format) with the following structure:
 
-```json
-{
-  "charging_station": {
-    "latitude": 47.123456,
-    "longitude": 8.123456,
-    "box_id": "YOUR_BOX_ID",
-    "connector_id": 1
-  },
-  "ekz": {
-    "username": "your_username",
-    "password": "your_password"
-  }
-}
+```yaml
+username: foo@example.com
+password: your-password
+charging_station:
+  box_id:  22222222
+  connector_id: 1
+  latitude: 47.123456
+  longitude: 8.123456
 ```
 
 ## Usage
@@ -56,22 +51,22 @@ Create a config file (JSON format) with the following structure:
 
 Start charging:
 ```bash
-./ekz-tesla -c config.json start
+./ekz-tesla -c config.yaml start
 ```
 
 Stop charging:
 ```bash
-./ekz-tesla -c config.json stop
+./ekz-tesla -c config.yaml stop
 ```
 
 List charging stations:
 ```bash
-./ekz-tesla -c config.json list
+./ekz-tesla -c config.yaml list
 ```
 
 Monitor live charging data:
 ```bash
-./ekz-tesla -c config.json live-data
+./ekz-tesla -c config.yaml live-data
 ```
 
 ### Automatic Charging
@@ -79,7 +74,7 @@ Monitor live charging data:
 Start charging automatically when conditions are met:
 
 ```bash
-./ekz-tesla -c config.json autostart --car-id 1 --teslamate-api-url http://teslamate-api:8080 --maximum-charge 90
+./ekz-tesla -c config.yaml autostart --car-id 1 --teslamate-api-url http://teslamate-api:8080 --maximum-charge 90
 ```
 
 ### Scheduled Charging
@@ -87,7 +82,7 @@ Start charging automatically when conditions are met:
 Set up a recurring schedule for automatic charging:
 
 ```bash
-./ekz-tesla -c config.json scheduled-autostart --car-id 1 --teslamate-api-url http://teslamate-api:8080 --maximum-charge 90 --cronjob-line "0 22 * * *"
+./ekz-tesla -c config.yaml scheduled-autostart --car-id 1 --teslamate-api-url http://teslamate-api:8080 --maximum-charge 90 --cronjob-line "0 22 * * *"
 ```
 
 ### Options
