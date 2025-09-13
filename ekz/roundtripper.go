@@ -2,6 +2,7 @@ package ekz
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -42,13 +43,14 @@ func (e ekzRoundTripper) RoundTrip(request *http.Request) (*http.Response, error
 		// Attempt to refresh the token
 		if err := e.client.refreshTokenIfNeeded(); err != nil {
 			log.Errorf("Failed to refresh token: %v", err)
-			return response, nil // Return original 401 response
+			// Return a proper error instead of the 401 response to stop infinite loops
+			return nil, fmt.Errorf("authentication failed after token refresh attempts: %w", err)
 		}
 
 		// Clone the request again for retry
 		retryReq, err := cloneRequest(request, originalBody)
 		if err != nil {
-			return response, nil // Return original 401 response
+			return nil, fmt.Errorf("failed to clone request for retry: %w", err)
 		}
 
 		// Set new token and retry

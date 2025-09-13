@@ -6,20 +6,26 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	Backend string = "https://be.emob.ekz.ch"
+	Backend                 string = "https://be.emob.ekz.ch"
+	MaxRefreshAttempts      int    = 3
+	RefreshCooldownDuration        = 5 * time.Minute
 )
 
 type Client struct {
-	httpClient *http.Client
-	config     *Config
-	configPath string
-	token      string
-	tokenMutex sync.RWMutex
+	httpClient      *http.Client
+	config          *Config
+	configPath      string
+	token           string
+	tokenMutex      sync.RWMutex
+	refreshAttempts int64
+	lastRefreshTime time.Time
 }
 
 type loginRequest struct {
@@ -61,6 +67,9 @@ func (c *Client) SetConfigPath(path string) {
 func (c *Client) Init() error {
 	log.Debugf("initializing client")
 
+	// Reset refresh attempts on initialization
+	atomic.StoreInt64(&c.refreshAttempts, 0)
+
 	// Check if token is valid
 	log.Debugf("Checking if the token is valid")
 	if c.config.Token != "" {
@@ -86,6 +95,10 @@ func (c *Client) Init() error {
 }
 
 func (c *Client) Login(username, password string) error {
+	return c.loginWithClient(c.httpClient, username, password)
+}
+
+func (c *Client) loginWithClient(client *http.Client, username, password string) error {
 	log.Debugf("logging in")
 	req := loginRequest{
 		Device:        "WEB",
@@ -97,10 +110,20 @@ func (c *Client) Login(username, password string) error {
 	if err != nil {
 		return err
 	}
-	res, err := c.httpClient.Post(Backend+"/users/log-in", "application/json", bytes.NewReader(body))
+
+	httpReq, err := http.NewRequest(http.MethodPost, Backend+"/users/log-in", bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("User-Agent", "ekz-go")
+	httpReq.Header.Set("Device", "WEB")
+
+	res, err := client.Do(httpReq)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("login failed: %s", res.Status)
@@ -222,10 +245,37 @@ func (c *Client) setToken(token string) {
 
 // refreshTokenIfNeeded attempts to refresh the token if we get a 401
 func (c *Client) refreshTokenIfNeeded() error {
-	log.Debugf("Refreshing token due to 401 response")
-	err := c.Login(c.config.Username, c.config.Password)
+	// Check if we've exceeded max refresh attempts
+	attempts := atomic.LoadInt64(&c.refreshAttempts)
+	if attempts >= int64(MaxRefreshAttempts) {
+		return fmt.Errorf("authentication failed: exceeded maximum refresh attempts (%d). Please check your credentials", MaxRefreshAttempts)
+	}
+
+	// Check cooldown period to prevent rapid retries
+	if time.Since(c.lastRefreshTime) < RefreshCooldownDuration && attempts > 0 {
+		return fmt.Errorf("authentication failed: too many recent attempts. Please wait %v before retrying", RefreshCooldownDuration)
+	}
+
+	// Increment attempt counter
+	atomic.AddInt64(&c.refreshAttempts, 1)
+	c.lastRefreshTime = time.Now()
+
+	log.Debugf("Refreshing token due to 401 response (attempt %d/%d)", atomic.LoadInt64(&c.refreshAttempts), MaxRefreshAttempts)
+
+	// Create a new HTTP client without the roundtripper to avoid infinite recursion
+	directClient := &http.Client{
+		Transport: http.DefaultTransport,
+		Timeout:   30 * time.Second,
+	}
+
+	err := c.loginWithClient(directClient, c.config.Username, c.config.Password)
 	if err != nil {
+		log.Errorf("Token refresh failed (attempt %d/%d): %v", atomic.LoadInt64(&c.refreshAttempts), MaxRefreshAttempts, err)
 		return fmt.Errorf("failed to refresh token: %w", err)
 	}
+
+	// Reset attempts counter on successful login
+	atomic.StoreInt64(&c.refreshAttempts, 0)
+	log.Infof("Token refreshed successfully")
 	return nil
 }

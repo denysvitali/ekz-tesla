@@ -154,9 +154,9 @@ func TestTokenRefreshFailsGracefully(t *testing.T) {
 		t.Fatal("Expected error when token refresh fails")
 	}
 
-	// The error should be related to the profile request, not the login
-	// (since we return the original 401 when refresh fails)
-	if err.Error() != "unexpected status 401 Unauthorized" {
-		t.Errorf("Expected '401 Unauthorized' error, got: %v", err)
+	// The error should indicate authentication failure after token refresh attempts
+	expectedError := `Get "https://be.emob.ekz.ch/users/profile": authentication failed after token refresh attempts: failed to refresh token: login failed: 401 Unauthorized`
+	if err.Error() != expectedError {
+		t.Errorf("Expected '%s' error, got: %v", expectedError, err)
 	}
 }
