@@ -1,6 +1,10 @@
 package ekz
 
-import "net/http"
+import (
+	"bytes"
+	"io"
+	"net/http"
+)
 
 type ekzRoundTripper struct {
 	inner  http.RoundTripper
@@ -8,12 +12,94 @@ type ekzRoundTripper struct {
 }
 
 func (e ekzRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
-	if e.client.token != "" {
-		request.Header.Set("Authorization", "Token "+e.client.token)
+	// Clone the request in case we need to retry
+	originalBody, err := cloneRequestBody(request)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set auth headers
+	token := e.client.getToken()
+	if token != "" {
+		request.Header.Set("Authorization", "Token "+token)
 	}
 	request.Header.Set("User-Agent", "ekz-go")
 	request.Header.Set("Device", "WEB")
-	return e.inner.RoundTrip(request)
+
+	// Make the request
+	response, err := e.inner.RoundTrip(request)
+	if err != nil {
+		return response, err
+	}
+
+	// If we get 401 and have credentials, try to refresh token and retry
+	if response.StatusCode == http.StatusUnauthorized && e.client.config.Username != "" && e.client.config.Password != "" {
+		log.Debugf("Received 401, attempting to refresh token")
+
+		// Close the original response body
+		response.Body.Close()
+
+		// Attempt to refresh the token
+		if err := e.client.refreshTokenIfNeeded(); err != nil {
+			log.Errorf("Failed to refresh token: %v", err)
+			return response, nil // Return original 401 response
+		}
+
+		// Clone the request again for retry
+		retryReq, err := cloneRequest(request, originalBody)
+		if err != nil {
+			return response, nil // Return original 401 response
+		}
+
+		// Set new token and retry
+		newToken := e.client.getToken()
+		if newToken != "" {
+			retryReq.Header.Set("Authorization", "Token "+newToken)
+		}
+
+		log.Debugf("Retrying request with refreshed token")
+		return e.inner.RoundTrip(retryReq)
+	}
+
+	return response, err
+}
+
+// cloneRequestBody reads and stores the request body for potential retry
+func cloneRequestBody(req *http.Request) ([]byte, error) {
+	if req.Body == nil || req.Body == http.NoBody {
+		return nil, nil
+	}
+
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reset the body for the original request
+	req.Body = io.NopCloser(bytes.NewReader(body))
+	return body, nil
+}
+
+// cloneRequest creates a new request with the same properties
+func cloneRequest(original *http.Request, body []byte) (*http.Request, error) {
+	var bodyReader io.Reader
+	if body != nil {
+		bodyReader = bytes.NewReader(body)
+	}
+
+	newReq, err := http.NewRequest(original.Method, original.URL.String(), bodyReader)
+	if err != nil {
+		return nil, err
+	}
+
+	// Copy headers
+	for key, values := range original.Header {
+		for _, value := range values {
+			newReq.Header.Add(key, value)
+		}
+	}
+
+	return newReq, nil
 }
 
 var _ http.RoundTripper = &ekzRoundTripper{}

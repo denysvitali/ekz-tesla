@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 )
@@ -18,6 +19,7 @@ type Client struct {
 	config     *Config
 	configPath string
 	token      string
+	tokenMutex sync.RWMutex
 }
 
 type loginRequest struct {
@@ -63,10 +65,10 @@ func (c *Client) Init() error {
 	log.Debugf("Checking if the token is valid")
 	if c.config.Token != "" {
 		log.Debugf("token is not empty, trying to use it")
-		c.token = c.config.Token
+		c.setToken(c.config.Token)
 		if err := c.checkToken(); err != nil {
 			log.Warnf("token is invalid: %s", err)
-			c.token = ""
+			c.setToken("")
 			err = c.Login(c.config.Username, c.config.Password)
 			if err != nil {
 				return err
@@ -109,7 +111,7 @@ func (c *Client) Login(username, password string) error {
 		return err
 	}
 
-	c.token = response.Token
+	c.setToken(response.Token)
 	return c.saveToken()
 }
 
@@ -179,7 +181,7 @@ func (c *Client) remoteOp(boxId string, connectorID int, op string) (*RemoteStar
 }
 
 func (c *Client) checkToken() error {
-	if c.token == "" {
+	if c.getToken() == "" {
 		return fmt.Errorf("token is empty")
 	}
 
@@ -193,7 +195,7 @@ func (c *Client) checkToken() error {
 
 // saveToken saves the token to the config file
 func (c *Client) saveToken() error {
-	c.config.Token = c.token
+	c.config.Token = c.getToken()
 	if c.configPath == "" {
 		return nil
 	}
@@ -202,4 +204,28 @@ func (c *Client) saveToken() error {
 
 func (c *Client) GetConfig() Config {
 	return *c.config
+}
+
+// getToken returns the current token in a thread-safe way
+func (c *Client) getToken() string {
+	c.tokenMutex.RLock()
+	defer c.tokenMutex.RUnlock()
+	return c.token
+}
+
+// setToken sets the token in a thread-safe way
+func (c *Client) setToken(token string) {
+	c.tokenMutex.Lock()
+	defer c.tokenMutex.Unlock()
+	c.token = token
+}
+
+// refreshTokenIfNeeded attempts to refresh the token if we get a 401
+func (c *Client) refreshTokenIfNeeded() error {
+	log.Debugf("Refreshing token due to 401 response")
+	err := c.Login(c.config.Username, c.config.Password)
+	if err != nil {
+		return fmt.Errorf("failed to refresh token: %w", err)
+	}
+	return nil
 }
