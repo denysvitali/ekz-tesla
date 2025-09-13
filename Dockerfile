@@ -3,7 +3,9 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -o ekz-tesla .
+ARG TARGETOS
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o ekz-tesla .
 
 FROM alpine:latest AS certs
 RUN apk --no-cache add ca-certificates
