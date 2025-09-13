@@ -5,7 +5,7 @@ RUN go mod download
 COPY . .
 ARG TARGETOS
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o ekz-tesla-$TARGETARCH .
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o ekz-tesla-$TARGETARCH .
 
 FROM alpine:latest AS certs
 RUN apk --no-cache add ca-certificates
