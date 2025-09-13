@@ -13,7 +13,8 @@ ekz-tesla helps Tesla owners automate their charging experience with EKZ home ch
     - Plugged in
     - Below your desired charge level
     - Located near your charging station
-- Scheduling automatic charging using cron expressions
+- Smart scheduling based on electricity tariffs (charges only during low tariff periods)
+- ⚠️ **DEPRECATED**: Manual scheduling using cron expressions (use smart-autostart instead)
 
 ## Installation
 
@@ -77,13 +78,50 @@ Start charging automatically when conditions are met:
 ./ekz-tesla -c config.yaml autostart --car-id 1 --teslamate-api-url http://teslamate-api:8080 --maximum-charge 90
 ```
 
-### Scheduled Charging
+### Smart Scheduling (Recommended)
 
-Set up a recurring schedule for automatic charging:
+**NEW**: Automatically charge during low tariff periods based on predefined schedules:
+
+```bash
+./ekz-tesla -c config.yaml smart-autostart --car-id 1 --teslamate-api-url http://teslamate-api:8080 --maximum-charge 90
+```
+
+This intelligent scheduler:
+- ⚡ Automatically starts charging only during low tariff periods
+- 💰 Saves money by avoiding high tariff times (default: weekdays 7AM-8PM)
+- 📅 Uses EKZ's standard schedule: Low tariff on weekends and weekday nights
+- ⚙️ Customizable schedule via command-line arguments
+- 🚀 Lightweight and efficient - no constant API polling
+
+#### Custom Tariff Schedule
+
+You can override the default schedule with custom high tariff times:
+
+```bash
+./ekz-tesla -c config.yaml smart-autostart \
+  --car-id 1 \
+  --teslamate-api-url http://teslamate-api:8080 \
+  --maximum-charge 90 \
+  --high-tariff-times "8:00-18:00:Mon,Tue,Wed,Thu,Fri" \
+  --high-tariff-times "10:00-14:00:Sat,Sun"
+```
+
+**Time format**: `HH:MM-HH:MM:Weekdays` where weekdays are optional (Mon,Tue,Wed,Thu,Fri,Sat,Sun)
+
+### Manual Scheduled Charging (DEPRECATED)
+
+⚠️ **This approach is deprecated**. Use `smart-autostart` instead for better cost optimization.
+
+Set up a recurring schedule for automatic charging using cron expressions:
 
 ```bash
 ./ekz-tesla -c config.yaml scheduled-autostart --car-id 1 --teslamate-api-url http://teslamate-api:8080 --maximum-charge 90 --cronjob-line "0 22 * * *"
 ```
+
+**Why smart-autostart is better:**
+- No need to manually calculate optimal charging times
+- Automatically adapts to tariff changes
+- Ensures you always charge at the cheapest rates
 
 ### Options
 
