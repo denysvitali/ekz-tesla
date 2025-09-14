@@ -21,6 +21,8 @@ func TestClient_GetProfile(t *testing.T) {
 				"email":         "user@example.com",
 				"password":      "password",
 				"isSocialLogin": false,
+				"provider":      nil,
+				"token":         nil,
 			},
 		).
 		Reply(http.StatusOK).

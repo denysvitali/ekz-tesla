@@ -29,10 +29,12 @@ type Client struct {
 }
 
 type loginRequest struct {
-	Device        string `json:"device"`
-	Email         string `json:"email"`
-	Password      string `json:"password"`
-	IsSocialLogin bool   `json:"isSocialLogin"`
+	Device        string  `json:"device"`
+	Email         string  `json:"email"`
+	Password      string  `json:"password"`
+	IsSocialLogin bool    `json:"isSocialLogin"`
+	Provider      *string `json:"provider"`
+	Token         *string `json:"token"`
 }
 
 type loginResponse struct {
@@ -105,6 +107,8 @@ func (c *Client) loginWithClient(client *http.Client, username, password string)
 		Email:         username,
 		Password:      password,
 		IsSocialLogin: false,
+		Provider:      nil,
+		Token:         nil,
 	}
 	body, err := json.Marshal(req)
 	if err != nil {
