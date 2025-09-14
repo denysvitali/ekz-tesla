@@ -22,11 +22,10 @@ type Config struct {
 	ChargingStation ChargingStationConfig `yaml:"charging_station"`
 }
 
-var defaultConfigFilePath = xdg.ConfigHome + "/ekz-go/config.yaml"
+var defaultConfigFilePath = xdg.ConfigHome + "/ekz-tesla/config.yaml"
 
 func GetConfigFromFile(inputConfigFile string) (*Config, error) {
 	if inputConfigFile == "" {
-		log.Infof("config file not set, using default: %s", defaultConfigFilePath)
 		inputConfigFile = defaultConfigFilePath
 	}
 	f, err := os.Open(inputConfigFile)

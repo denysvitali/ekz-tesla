@@ -72,6 +72,21 @@ func (c *Client) Init() error {
 	// Reset refresh attempts on initialization
 	atomic.StoreInt64(&c.refreshAttempts, 0)
 
+	// Check if we have credentials to authenticate
+	if c.config.Username == "" || c.config.Password == "" {
+		if c.config.Token == "" {
+			return fmt.Errorf("no credentials or token configured")
+		}
+		// We have a token but no credentials, try to use it
+		log.Debugf("Using existing token without credentials")
+		c.setToken(c.config.Token)
+		if err := c.checkToken(); err != nil {
+			log.Warnf("Token is invalid and no credentials available to refresh: %s", err)
+			return fmt.Errorf("token is invalid and no credentials available to refresh: %w", err)
+		}
+		return nil
+	}
+
 	// Check if token is valid
 	log.Debugf("Checking if the token is valid")
 	if c.config.Token != "" {

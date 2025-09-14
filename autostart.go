@@ -2,10 +2,13 @@ package main
 
 import (
 	geo "github.com/kellydunn/golang-geo"
+	"github.com/sirupsen/logrus"
 
 	"github.com/denysvitali/ekz-tesla/ekz"
 	"github.com/denysvitali/ekz-tesla/teslamateapi"
 )
+
+var log = logrus.StandardLogger()
 
 // AutostartService handles the logic for automatically starting charging
 type AutostartService struct {
