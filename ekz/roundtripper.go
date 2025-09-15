@@ -38,7 +38,7 @@ func (e ekzRoundTripper) RoundTrip(request *http.Request) (*http.Response, error
 		log.Debugf("Received 401, attempting to refresh token")
 
 		// Close the original response body
-		response.Body.Close()
+		_ = response.Body.Close()
 
 		// Attempt to refresh the token
 		if err := e.client.refreshTokenIfNeeded(); err != nil {

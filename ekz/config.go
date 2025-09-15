@@ -32,7 +32,7 @@ func GetConfigFromFile(inputConfigFile string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var cfg Config
 	err = yaml.NewDecoder(f).Decode(&cfg)
@@ -47,6 +47,6 @@ func SaveConfig(cfg *Config, configFile string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return yaml.NewEncoder(f).Encode(cfg)
 }

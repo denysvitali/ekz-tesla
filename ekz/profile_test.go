@@ -42,7 +42,7 @@ func TestClient_GetProfile(t *testing.T) {
 	require.NoError(t, err)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "ekz-tesla-*.yaml")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 	c.SetConfigPath(tmpFile.Name())
 	err = c.Login(cfg.Username, cfg.Password)
 	if err != nil {

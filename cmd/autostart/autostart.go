@@ -61,8 +61,12 @@ func init() {
 	AutostartCmd.PersistentFlags().StringVar(&teslaMateAPIURL, "teslamate-api-url", "", "TeslaMate API URL (required)")
 	AutostartCmd.PersistentFlags().IntVar(&maximumCharge, "maximum-charge", 90, "Maximum charge percentage")
 
-	AutostartCmd.MarkPersistentFlagRequired("car-id")
-	AutostartCmd.MarkPersistentFlagRequired("teslamate-api-url")
+	if err := AutostartCmd.MarkPersistentFlagRequired("car-id"); err != nil {
+		panic(fmt.Sprintf("Failed to mark car-id flag as required: %v", err))
+	}
+	if err := AutostartCmd.MarkPersistentFlagRequired("teslamate-api-url"); err != nil {
+		panic(fmt.Sprintf("Failed to mark teslamate-api-url flag as required: %v", err))
+	}
 
 	// Scheduled-specific flags
 	autostartScheduledCmd.Flags().StringVar(&cronSchedule, "cron", "*/5 * * * *", "Cron schedule (default: every 5 minutes)")

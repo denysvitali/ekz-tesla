@@ -65,8 +65,12 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, warn, error)")
 
 	// Bind flags to viper
-	viper.BindPFlag("config", RootCmd.PersistentFlags().Lookup("config"))
-	viper.BindPFlag("log-level", RootCmd.PersistentFlags().Lookup("log-level"))
+	if err := viper.BindPFlag("config", RootCmd.PersistentFlags().Lookup("config")); err != nil {
+		log.Fatalf("Failed to bind config flag: %v", err)
+	}
+	if err := viper.BindPFlag("log-level", RootCmd.PersistentFlags().Lookup("log-level")); err != nil {
+		log.Fatalf("Failed to bind log-level flag: %v", err)
+	}
 
 	// Set environment variable prefix
 	viper.SetEnvPrefix("EKZ")
