@@ -8,10 +8,11 @@ ARG TARGETARCH
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o ekz-tesla-$TARGETARCH .
 
 FROM alpine:latest AS certs
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates tzdata
 
 FROM scratch
 ARG TARGETARCH
 COPY --from=builder /app/ekz-tesla-$TARGETARCH /ekz-tesla
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=certs /usr/share/zoneinfo /usr/share/zoneinfo
 ENTRYPOINT ["/ekz-tesla"]
