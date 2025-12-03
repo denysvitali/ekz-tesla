@@ -11,6 +11,7 @@ import (
 	"github.com/denysvitali/ekz-tesla/cmd/root"
 	_ "github.com/denysvitali/ekz-tesla/cmd/start"
 	_ "github.com/denysvitali/ekz-tesla/cmd/stop"
+	_ "github.com/denysvitali/ekz-tesla/cmd/version"
 )
 
 func main() {

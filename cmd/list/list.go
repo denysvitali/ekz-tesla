@@ -14,7 +14,11 @@ import (
 var ListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all available charging stations",
-	Long:  `List all charging stations associated with your EKZ account, showing their status and availability.`,
+	Long: `List all charging stations associated with your EKZ account, showing their status and availability.
+
+The output shows the Box ID and Connector ID needed for the start/stop commands.`,
+	Example: `  # List all charging stations
+  ekz-tesla list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := root.GetClient()
 		if client == nil {
@@ -45,43 +49,75 @@ func printChargingStations(stations []ekz.ChargingStation) {
 	var rows [][]string
 	for _, s := range stations {
 		for _, box := range s.ChargeBoxes {
-			status := box.ChargingProcessStatus
-			if status == "" {
-				status = "-"
-			}
-
-			connectorStatus := box.ConnectorStatus
-			if connectorStatus == "" {
-				connectorStatus = "-"
-			}
-
 			onlineStatus := "❌"
 			if box.Online {
 				onlineStatus = "✅"
 			}
 
-			rows = append(rows, []string{
-				box.ChargeBoxID,
-				box.ChargeBoxName,
-				status,
-				connectorStatus,
-				onlineStatus,
-			})
+			// If there are connectors, show each one as a separate row
+			if len(box.Connectors) > 0 {
+				for _, conn := range box.Connectors {
+					status := conn.ConnectorStatus
+					if status == "" {
+						status = conn.Status
+					}
+					if status == "" {
+						status = "-"
+					}
+
+					plugType := conn.PlugType
+					if plugType == "" {
+						plugType = "-"
+					}
+
+					rows = append(rows, []string{
+						box.ChargeBoxID,
+						fmt.Sprintf("%d", conn.ConnectorID),
+						box.ChargeBoxName,
+						plugType,
+						status,
+						onlineStatus,
+					})
+				}
+			} else {
+				// Fallback: show box-level info if no connectors available
+				status := box.ConnectorStatus
+				if status == "" {
+					status = box.ChargingProcessStatus
+				}
+				if status == "" {
+					status = "-"
+				}
+
+				plugType := box.PlugType
+				if plugType == "" {
+					plugType = "-"
+				}
+
+				rows = append(rows, []string{
+					box.ChargeBoxID,
+					"-",
+					box.ChargeBoxName,
+					plugType,
+					status,
+					onlineStatus,
+				})
+			}
 		}
 	}
 
 	t := table.New().
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("99"))).
-		Headers("ID", "NAME", "STATUS", "CONNECTOR", "ONLINE").
+		Headers("BOX ID", "CONN", "NAME", "PLUG TYPE", "STATUS", "ONLINE").
 		StyleFunc(func(row, col int) lipgloss.Style {
 			if row == 0 {
 				return lipgloss.NewStyle().Bold(true).PaddingLeft(1).PaddingRight(1)
 			}
 			baseStyle := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 
-			// Center align status columns
-			if col >= 2 {
+			// Center align connector ID, status, and online columns
+			if col == 1 || col >= 4 {
 				return baseStyle.AlignHorizontal(lipgloss.Center)
 			}
 			return baseStyle

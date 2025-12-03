@@ -18,6 +18,11 @@ var StopCmd = &cobra.Command{
 	Short: "Stop charging at a charging station",
 	Long: `Stop an active charging session at the specified charging station.
 If no box ID or connector ID is provided, uses values from configuration.`,
+	Example: `  # Stop charging using config values
+  ekz-tesla stop
+
+  # Stop charging at a specific box and connector
+  ekz-tesla stop --box-id CH-EKZ-E001234 --connector-id 1`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := root.GetClient()
 		if client == nil {

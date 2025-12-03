@@ -121,10 +121,18 @@ func runScheduledAutostart(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("Starting scheduled autostart with cron: %s\n", cronSchedule)
+	fmt.Println("Press Ctrl+C to stop")
 	s.Start()
 
-	// Block forever
-	select {}
+	// Set up signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Wait for shutdown signal
+	<-sigChan
+	fmt.Println("\nShutting down scheduler...")
+
+	return nil
 }
 
 func runSmartAutostart(cmd *cobra.Command, args []string) error {
